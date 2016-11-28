@@ -158,6 +158,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             paint.setColor(textColor);
             paint.setTypeface(NORMAL_TYPEFACE);
             paint.setAntiAlias(true);
+            paint.setTextSize(getResources().getDimension(R.dimen.date_text_size));
             return paint;
         }
 
@@ -289,7 +290,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
             int dayNo = mCalendar.get(Calendar.DAY_OF_MONTH);
             int year = mCalendar.get(Calendar.YEAR);
             String dateText = String.format("%s, %s %d %d", dayName.toUpperCase(), monthName.toUpperCase(), dayNo, year);
-            canvas.drawText(dateText, mDateXOffset, mDateYOffset, mDatePaint);
+            canvas.drawText(dateText, bounds.centerX() - mDateXOffset, mDateYOffset, mDatePaint);
         }
 
         /**
