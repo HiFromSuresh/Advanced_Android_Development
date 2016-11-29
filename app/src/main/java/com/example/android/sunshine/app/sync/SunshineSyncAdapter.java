@@ -36,6 +36,12 @@ import com.example.android.sunshine.app.R;
 import com.example.android.sunshine.app.Utility;
 import com.example.android.sunshine.app.data.WeatherContract;
 import com.example.android.sunshine.app.muzei.WeatherMuzeiSource;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -51,6 +57,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
@@ -86,6 +93,11 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public static final int LOCATION_STATUS_SERVER_INVALID = 2;
     public static final int LOCATION_STATUS_UNKNOWN = 3;
     public static final int LOCATION_STATUS_INVALID = 4;
+
+    private static final String PATH_WEATHER = "/weather";
+    private static final String HIGH_TEMP = "high_temp";
+    private static final String LOW_TEMP = "low_temp";
+    private static final String WEATHER_ID = "weather_id";
 
     public SunshineSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -362,7 +374,33 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     private void sendWeatherToWear() {
+        String location = Utility.getPreferredLocation(getContext());
+        Uri weatherUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(location, System.currentTimeMillis());
+        Cursor cursor = getContext().getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
+        if (cursor == null) {
+            return;
+        }
+        if (!cursor.moveToFirst()) {
+            cursor.close();
+            return;
+        }
 
+        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(getContext())
+                .addApi(Wearable.API)
+                .build();
+
+        ConnectionResult connectionResult = googleApiClient.blockingConnect(30, TimeUnit.SECONDS);
+        if (!connectionResult.isSuccess()) {
+            return;
+        }
+
+        PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WEATHER);
+        DataMap dataMap = putDataMapRequest.getDataMap();
+        dataMap.putString(HIGH_TEMP, Utility.formatTemperature(getContext(), cursor.getDouble(INDEX_MAX_TEMP)));
+        dataMap.putString(LOW_TEMP, Utility.formatTemperature(getContext(), cursor.getDouble(INDEX_MIN_TEMP)));
+        dataMap.putInt(WEATHER_ID, cursor.getInt(INDEX_WEATHER_ID));
+        PutDataRequest putDataRequest = putDataMapRequest.asPutDataRequest();
+        Wearable.DataApi.putDataItem(googleApiClient, putDataRequest);
     }
 
     private void updateWidgets() {
@@ -576,8 +614,8 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
      * if the fake account doesn't exist yet.  If we make a new account, we call the
      * onAccountCreated method so we can initialize things.
      *
-     * @param context The context used to access the account service
      * @return a fake account.
+     * @param context The context used to access the account service
      */
     public static Account getSyncAccount(Context context) {
         // Get an instance of the Android account manager
