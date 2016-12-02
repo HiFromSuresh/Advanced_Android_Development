@@ -109,7 +109,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener{
+    private class Engine extends CanvasWatchFaceService.Engine implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener {
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
@@ -158,7 +158,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             mTextPaint = new Paint();
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
-            mXOffset = mTextPaint.measureText("00:00")/2;
+            mXOffset = mTextPaint.measureText("00:00") / 2;
 
             mDatePaint = new Paint();
             mDatePaint = createDatePaint(resources.getColor(R.color.digital_text));
@@ -183,7 +183,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         @Override
         public void onDestroy() {
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
-            Wearable.DataApi.removeListener(mGoogleApiClient,this);
+            Wearable.DataApi.removeListener(mGoogleApiClient, this);
             super.onDestroy();
         }
 
