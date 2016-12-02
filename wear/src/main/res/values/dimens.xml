@@ -8,4 +8,6 @@
 
     <dimen name="y_offset_date">110dp</dimen>
     <dimen name="date_text_size">12dp</dimen>
+    <dimen name="digital_temp_text_size">24dp</dimen>
+    <dimen name="y_offset_weather">150dp</dimen>
 </resources>

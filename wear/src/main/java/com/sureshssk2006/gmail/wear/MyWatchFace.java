@@ -21,11 +21,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -127,6 +130,10 @@ public class MyWatchFace extends CanvasWatchFaceService {
         float mDateXOffset;
         float mDateYOffset;
 
+        Paint mHighTempPaint;
+        Paint mLowTempPaint;
+        float mYOffsetWeather;
+
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -155,8 +162,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             mDatePaint = new Paint();
             mDatePaint = createDatePaint(resources.getColor(R.color.digital_text));
-            mDateXOffset = mDatePaint.measureText("WED, JUN 13 2016") / 2;
+            mDateXOffset = mDatePaint.measureText("XXX, XXX 10 2016") / 2;
             mDateYOffset = resources.getDimension(R.dimen.y_offset_date);
+
+            mHighTempPaint = new Paint();
+            mHighTempPaint = createTextTempPaint(resources.getColor(R.color.digital_text));
+            mLowTempPaint = new Paint();
+            mLowTempPaint = createTextTempPaint(resources.getColor(R.color.digital_text));
+            mYOffsetWeather = resources.getDimension(R.dimen.y_offset_weather);
 
             mCalendar = Calendar.getInstance();
 
@@ -189,6 +202,15 @@ public class MyWatchFace extends CanvasWatchFaceService {
             paint.setTypeface(NORMAL_TYPEFACE);
             paint.setAntiAlias(true);
             paint.setTextSize(getResources().getDimension(R.dimen.date_text_size));
+            return paint;
+        }
+
+        private Paint createTextTempPaint(int textColor) {
+            Paint paint = new Paint();
+            paint.setColor(textColor);
+            paint.setTypeface(NORMAL_TYPEFACE);
+            paint.setAntiAlias(true);
+            paint.setTextSize(getResources().getDimension(R.dimen.digital_temp_text_size));
             return paint;
         }
 
@@ -312,6 +334,30 @@ public class MyWatchFace extends CanvasWatchFaceService {
             int year = mCalendar.get(Calendar.YEAR);
             String dateText = String.format("%s, %s %d %d", dayName.toUpperCase(), monthName.toUpperCase(), dayNo, year);
             canvas.drawText(dateText, bounds.centerX() - mDateXOffset, mDateYOffset, mDatePaint);
+
+            if (mHighTemp != null && mLowTemp != null) {
+
+                float highTextSize = mHighTempPaint.measureText(mHighTemp);
+                float lowTextSize = mLowTempPaint.measureText(mLowTemp);
+                if (mAmbient) {
+                    mLowTempPaint.setColor(getResources().getColor(R.color.digital_text));
+                    float xAmbientOffset = bounds.centerX() - ((highTextSize + lowTextSize + 20) / 2);
+                    canvas.drawText(mHighTemp, xAmbientOffset, mYOffsetWeather, mHighTempPaint);
+                    canvas.drawText(mLowTemp, xAmbientOffset + highTextSize + 20, mYOffsetWeather, mLowTempPaint);
+                } else {
+                    mLowTempPaint.setColor(getResources().getColor(R.color.digital_text));
+                    float xOffset = bounds.centerX() - (highTextSize / 2);
+
+                    Drawable b = getResources().getDrawable(WearIconUtil.getIconResourceForWeatherCondition(mWeatherId));
+                    Bitmap icon = ((BitmapDrawable) b).getBitmap();
+                    float scaledWidth = (mHighTempPaint.getTextSize() / icon.getHeight()) * icon.getWidth();
+                    Bitmap weatherIcon = Bitmap.createScaledBitmap(icon, (int) scaledWidth, (int) mHighTempPaint.getTextSize(), true);
+
+                    canvas.drawText(mHighTemp, bounds.centerX() - ((weatherIcon.getWidth() / 2) + highTextSize + 25), mYOffsetWeather, mHighTempPaint);
+                    canvas.drawText(mLowTemp, bounds.centerX() + (weatherIcon.getWidth() / 2) + 25, mYOffsetWeather, mLowTempPaint);
+                    canvas.drawBitmap(weatherIcon, xOffset, mYOffsetWeather - weatherIcon.getHeight(), null);
+                }
+            }
         }
 
         /**
