@@ -339,6 +339,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
                 float highTextSize = mHighTempPaint.measureText(mHighTemp);
                 float lowTextSize = mLowTempPaint.measureText(mLowTemp);
+
                 if (mAmbient) {
                     mLowTempPaint.setColor(getResources().getColor(R.color.digital_text));
                     float xAmbientOffset = bounds.centerX() - ((highTextSize + lowTextSize + 20) / 2);
